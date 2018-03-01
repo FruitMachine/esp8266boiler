@@ -6,7 +6,7 @@ deployed on ESP8266 / NodeMCU
 
 html_tests- simple html/php tests of eventual functionality
 
-simple_onoff - a very simple single web page
+simple_onoff - a very simple single web page with both buttons shown.
 
 ch_onoff_inteli - When on or off is enagaged, page for relevant button is served back. uses in-line CSS for a button.
 
