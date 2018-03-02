@@ -27,12 +27,16 @@ String jsonOff = "";
 String switchOff = "";
 String switchOn = "";
 
+int state = false ;
 int gpio0_pin = D6;
 int gpio2_pin = D7;
 int gpio0_in = 0;
 int gpio2_in = 0;
 int state0;
 int state2;
+int timemod = 0;
+int mills = 0;
+String flipmode = "";
 //const char* gpio0_in = "LOW";
 //const char* gpio2_in = "LOW";
 
@@ -44,7 +48,7 @@ void setup(void){
   webPage += "<!doctype html><html><meta charset=\"utf-8\"><title>Heating Control</title>";
   webPage += "<script type=\"text/javascript\" src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>";
   webPage += "<style media=\"screen\" type=\"text/css\">";
-  webPage += "#header { clear:both; float:top; width:100%; background:#162; color:#FFF; font-family: arial;  padding:0.3em 15px 0.3em 15px;";
+  webPage += "#header { text-align: center; clear:both; float:top; width:100%; background:#162; color:#FFF; font-family: arial; font-weight: bold padding:0.3em 15px 0.3em 15px;";
   webPage += "margin:0; text-align:left;} #main { width:100%; background:#FFF; color:#000; font-family: arial; padding: 40px; } body { text-align: center; }";
   webPage += ".button {display: inline-block; margin: 10px; -webkit-border-radius: 8px; -moz-border-radius: 8px; border-radius: 8px; ";
   webPage += "-webkit-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35); -moz-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35);";
@@ -69,7 +73,7 @@ void setup(void){
   webPage += ".button:active span { -webkit-transform: translate(0, 4px); -moz-transform: translate(0, 4px); -o-transform: translate(0, 4px); transform: translate(0, 4px);}</style><body>";
 
   webPage += "<script>";
-  webPage += "(document).ready(function(){";
+  webPage += "$(document).ready(function(){";
   webPage += "$('#buttonOff').hide(); ";
   webPage += "  $('.button').click(function() {";
   webPage += "  $('img','#infoToggler').toggle();";
@@ -78,7 +82,7 @@ void setup(void){
   webPage += "$.ajax({";
   webPage += "        type:'POST',";
   webPage += "        dataType:'JSON',";
-  webPage += "        url:'switch.php',";
+  webPage += "        url:'switch',";
   webPage += "        data:'mode='+mode,";
   webPage += "        success:function(response)";
   webPage += "        {";
@@ -87,7 +91,7 @@ void setup(void){
   webPage += "          themode=response.mode;";
   webPage += "    $('#buttonOn').toggle(); ";
   webPage += "    $('#buttonOff').toggle(); ";
-  webPage += "          $(\"#message\").html(themode);";
+  /**webPage += "          $(\"#message\").html(themode);";*/
   webPage += "        },";
   webPage += "       error: function(error) {";
   webPage += "              console.log(error);";
@@ -96,13 +100,13 @@ void setup(void){
   webPage += "  });";
   webPage += "}); </script>";
   
-  webPage += "<div id=\"header\"><p>HEATING</p></div>";
+  webPage += "<div id=\"header\"><H1>THE HEATING</H1></div>";
   webPage += "<div id=\"infoToggler\">";
   webPage += switchOff;
   webPage += switchOn;
   webPage += "</div>";
   webPage += "<form id=\"myForm\" name=\"myForm\" action=\"switch\" method=\"post\">";
-  webPage += "<input type=\"checkbox\" name=\"toggle\" id=\"toggle\" data-toggle=\"toggle\" data-off=\"Off\" data-on=\"On\" checked>";
+  webPage += "<input type=\"checkbox\" name=\"toggle\" id=\"toggle\" data-toggle=\"toggle\" data-off=\"Off\" data-on=\"On\" checked style=\"display:none\">";
   webPage += "<div id=\"buttonOn\"><a href=\"#\" class=\"button\" id=\"buttonOn\"/>";
   webPage += "<span>Turn On</span>";
   webPage += "</a></div>";
@@ -124,7 +128,7 @@ void setup(void){
   digitalWrite(gpio0_pin, LOW);
   pinMode(gpio2_pin, OUTPUT);
   digitalWrite(gpio2_pin, LOW);
- 
+  
   delay(1000);
   Serial.begin(115200);
   WiFi.begin(ssid, password);
@@ -149,7 +153,6 @@ void setup(void){
     
   server.on("/", [](){
 
-  Serial.println("we request a form... ");
   //pinMode(gpio0_pin, INPUT);
   //pinMode(gpio2_pin, INPUT);
   
@@ -165,6 +168,8 @@ void setup(void){
   //pinMode(gpio2_pin, OUTPUT);
     server.send(200, "text/html", webPage);
   });
+
+  
   server.on("/switch", [](){
     if (server.arg("mode") == "true" ){
       server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -201,24 +206,30 @@ void setup(void){
       //pinMode(gpio2_pin, OUTPUT);
     }
   });
+
+  
    server.on("/On", [](){
     //pinMode(gpio0_pin, OUTPUT);
     //pinMode(gpio2_pin, OUTPUT);
     digitalWrite(gpio0_pin, HIGH);
-    delay(4000);
+    delay(1100);
     digitalWrite(gpio2_pin, HIGH);
+    state = 1 ;
     //if ((digitalRead(gpio0_pin) == LOW) && (digitalRead(gpio2_pin) == LOW)) {
       server.send(200, "application/json", jsonOn);
     //} else {
     //  server.send(200, "application/json", jsonFail);
     //}
   });
+
+  
   server.on("/Off", [](){
     //pinMode(gpio0_pin, OUTPUT);
     //pinMode(gpio2_pin, OUTPUT);
     digitalWrite(gpio0_pin, LOW);
-    delay(4000);
+    delay(1100);
     digitalWrite(gpio2_pin, LOW);
+    state = 0 ;
     //if ((digitalRead(gpio0_pin) == LOW) && (digitalRead(gpio2_pin) == LOW)) {
       server.send(200, "application/json", jsonOff);
     //} else {
@@ -231,5 +242,15 @@ void setup(void){
  
 void loop(void){
   server.handleClient();
+  /**mills = int(millis());
+  timemod = mills % 5000 ;
+  if (timemod == 0 ) {
+    Serial.println("5 secs passed");
+    Serial.print("State is: ");
+    Serial.println(state);
+  }
+  Serial.println(int(millis()));
+  
+  Serial.println(state);*/
 } 
 
