@@ -1,6 +1,7 @@
 /*********
-  Rui Santos
-  Complete project details at http://randomnerdtutorials.com  
+  Based on
+	Rui Santos
+	Complete project details at http://randomnerdtutorials.com  
 *********/
 
 #include <ESP8266WiFi.h>
