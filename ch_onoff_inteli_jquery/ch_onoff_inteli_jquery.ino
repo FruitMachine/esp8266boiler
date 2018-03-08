@@ -13,7 +13,7 @@ MDNSResponder mdns;
 
 // Replace with your network credentials
 const char* ssid = "WIFI SSID";
-const char* password = "WIFI PASSWORD";
+const char* pass = "WIFI PASSWORD";
 
 ESP8266WebServer server(80);
 
@@ -49,8 +49,9 @@ void setup(void){
   webPage += "<!doctype html><html><meta charset=\"utf-8\"><title>Heating Control</title>";
   webPage += "<script type=\"text/javascript\" src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>";
   webPage += "<style media=\"screen\" type=\"text/css\">";
-  webPage += "#header { text-align: center; clear:both; float:top; width:100%; background:#162; color:#FFF; font-family: arial; font-weight: bold padding:0.3em 15px 0.3em 15px;";
-  webPage += "margin:0; text-align:left;} #main { width:100%; background:#FFF; color:#000; font-family: arial; padding: 40px; } body { text-align: center; }";
+  webPage += "#header { text-align: center;  background:#162; color:#FFF; font-family: arial; font-weight: bold;  }";
+  webPage += "#main { width:100%; background:#FFF; color:#000; font-family: arial; padding: 40px; } body { text-align: center; }";
+  webPage += "#corner { text-align: right; bottom:0;right:0; background:#FFF; font-family: arial; font-size: 8px; }"; 
   webPage += ".button {display: inline-block; margin: 10px; -webkit-border-radius: 8px; -moz-border-radius: 8px; border-radius: 8px; ";
   webPage += "-webkit-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35); -moz-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35);";
   webPage += " box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35); -webkit-transition: -webkit-box-shadow .1s ease-in-out;";
@@ -101,7 +102,6 @@ void setup(void){
   webPage += "      $('#imgOn').hide();";
   webPage += "      $('#imgOff').show();";
   webPage += "        }";
-  /**webPage += "          $(\"#message\").html(themode);";*/
   webPage += "        },";
   webPage += "       error: function(error) {";
   webPage += "              console.log(error);";
@@ -124,7 +124,7 @@ void setup(void){
   webPage += "<div id=\"buttonOff\"><a href=\"#\" class=\"button\" id=\"buttonOff\"/>";
   webPage += "<span>Turn Off</span>";
   webPage += "</a></div></div>";
-  webPage += "<div id=\"message\" class=\"message\"><P>yo</P></div></form>";
+  webPage += "<div id=\"corner\" class=\"corner\"><a href=\"/\">Reset</a></div></form>";
 
   webPage += "</body></html>";
   
@@ -142,7 +142,7 @@ void setup(void){
   
   delay(1000);
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid, pass);
   Serial.println("");
 
   // Wait for connection
@@ -163,92 +163,81 @@ void setup(void){
 
     
   server.on("/", [](){
-
-  //pinMode(gpio0_pin, INPUT);
-  //pinMode(gpio2_pin, INPUT);
-  
-  //state0 = digitalRead(gpio0_pin);
-  //state2 = digitalRead(gpio2_pin);
-  //if (state0 == LOW) 
-  //{
-  //  Serial.println("i reckon pin0 was low ");
-  //} else {
-  //  Serial.println("i reckon pin0 was high ");
-  //}
-  //pinMode(gpio0_pin, OUTPUT);
-  //pinMode(gpio2_pin, OUTPUT);
-    server.send(200, "text/html", webPage);
+      server.send(200, "text/html", webPage);
   });
 
   
   server.on("/switch", [](){
-    if (server.arg("mode") == "true" ){
-      server.sendHeader("Access-Control-Allow-Origin", "*");
-      //pinMode(gpio0_pin, OUTPUT);
-      //pinMode(gpio2_pin, OUTPUT);
+    
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+
+    // toggle state
+    state = 1 - state;
+    
+    // if (server.arg("mode") == "true" ){
+    if (state == 1 ){
+      Serial.println("Request to toggle on");
       digitalWrite(gpio0_pin, HIGH);
-      delay(500);
+      delay(300);
       digitalWrite(gpio2_pin, HIGH);
-      //pinMode(gpio0_pin, INPUT);
-      //pinMode(gpio2_pin, INPUT);
-      //if ((digitalRead(gpio0_pin) == HIGH) && (digitalRead(gpio2_pin) == HIGH)) {
       server.send(200, "application/json", jsonOn);
-      //} else {
-      //  server.send(200, "application/json", jsonFail);
-      //}
-      //pinMode(gpio0_pin, OUTPUT);
-      //pinMode(gpio2_pin, OUTPUT);
     } else 
-      {
-      server.sendHeader("Access-Control-Allow-Origin", "*");
-      //pinMode(gpio0_pin, OUTPUT);
-      //pinMode(gpio2_pin, OUTPUT);
+    {
+      Serial.println("Request to toggle off");
       digitalWrite(gpio0_pin, LOW);
-      delay(500);
+      delay(300);
       digitalWrite(gpio2_pin, LOW);
-      //pinMode(gpio0_pin, INPUT);
-      //pinMode(gpio2_pin, INPUT);
-      //if ((digitalRead(gpio0_pin) == LOW) && (digitalRead(gpio2_pin) == LOW)) {
-        server.send(200, "application/json", jsonOff);
-      //} else {
-      //  server.send(200, "application/json", jsonFail);
-      //}
-      //pinMode(gpio0_pin, OUTPUT);
-      //pinMode(gpio2_pin, OUTPUT);
+      server.send(200, "application/json", jsonOff);
     }
   });
 
   
-   server.on("/On", [](){
-    //pinMode(gpio0_pin, OUTPUT);
-    //pinMode(gpio2_pin, OUTPUT);
+  server.on("/On", [](){
+    Serial.println("Request to turn on");
     digitalWrite(gpio0_pin, HIGH);
     delay(1100);
     digitalWrite(gpio2_pin, HIGH);
     state = 1 ;
-    //if ((digitalRead(gpio0_pin) == LOW) && (digitalRead(gpio2_pin) == LOW)) {
-      server.send(200, "application/json", jsonOn);
-    //} else {
-    //  server.send(200, "application/json", jsonFail);
-    //}
+    server.send(200, "application/json", jsonOn);
   });
 
   
   server.on("/Off", [](){
-    //pinMode(gpio0_pin, OUTPUT);
-    //pinMode(gpio2_pin, OUTPUT);
+    Serial.println("Request to turn off");
     digitalWrite(gpio0_pin, LOW);
     delay(1100);
     digitalWrite(gpio2_pin, LOW);
     state = 0 ;
-    //if ((digitalRead(gpio0_pin) == LOW) && (digitalRead(gpio2_pin) == LOW)) {
-      server.send(200, "application/json", jsonOff);
-    //} else {
-    //  server.send(200, "application/json", jsonFail);
-    //}
+    server.send(200, "application/json", jsonOff);
   });
+
+  server.on("/CHoff", [](){
+    Serial.println("Request to turn p0 off");
+    digitalWrite(gpio0_pin, LOW);
+    server.send(200, "text/plain", "CH/pin0 off\n");
+  });
+
+  server.on("/HWoff", [](){
+    Serial.println("Request to turn p2 off");
+    digitalWrite(gpio2_pin, LOW);
+    server.send(200, "text/plain", "HW/pin2 off\n");
+  });
+        
+  server.on("/CHon", [](){
+    Serial.println("Request to turn p0 on");
+    digitalWrite(gpio0_pin, HIGH);
+    server.send(200, "text/plain", "CH/pin0 on\n");
+  });
+
+  server.on("/HWon", [](){
+    Serial.println("Request to turn p2 on");
+    digitalWrite(gpio2_pin, HIGH);
+    server.send(200, "text/plain", "HW/pin2 on\n");
+  });
+  
   server.begin();
-  Serial.println("HTTP REST server started");
+  Serial.println("Heating controller started");
+  
 }
  
 void loop(void){
@@ -261,7 +250,6 @@ void loop(void){
     Serial.println(state);
   }
   Serial.println(int(millis()));
-  
-  Serial.println(state);*/
+  */
 } 
 
