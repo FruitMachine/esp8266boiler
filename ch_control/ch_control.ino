@@ -1,7 +1,16 @@
 /*********
-  Based on
-	Rui Santos
-	Complete project details at http://randomnerdtutorials.com  
+ * ESP8266 Heating controller
+ * 
+ * https://github.com/FruitMachine/esp8266boiler
+ * 
+ * Emulating a Honeywell ST699 boiler control
+ * Code to present a web page and activate relays to control heating & hot water
+ * All images and CSS delivered in page, no file system
+ * Uses jquery
+ * 
+ * Based on
+ * Rui Santos
+ * Complete project details at http://randomnerdtutorials.com  
 *********/
 
 #include <ESP8266WiFi.h>
@@ -13,12 +22,11 @@ MDNSResponder mdns;
 
 // Replace with your network credentials
 const char* ssid = "WIFI SSID";
-const char* pass = "WIFI PASSWORD";
+const char* password = "WIFI PASSWORD";
 
 ESP8266WebServer server(80);
 
 String webPage = "";
-String webPageF = "";
 String webPageOn = "";
 String webPageOff = "";
 String jsonSuccess = "";
@@ -28,7 +36,7 @@ String jsonOff = "";
 String switchOff = "";
 String switchOn = "";
 
-int state = false ;
+bool state = false ;
 int gpio0_pin = D6;
 int gpio2_pin = D7;
 int gpio0_in = 0;
@@ -76,8 +84,17 @@ void setup(void){
 
   webPage += "<script>";
   webPage += "$(document).ready(function(){";
+  webPage += "    if ($('#toggle').prop('checked') == \"true\") {";
+  webPage += "$('#buttonOn').hide(); ";
+  webPage += "$('#imgOff').hide();";
+  webPage += "$('#buttonOff').show(); ";
+  webPage += "$('#imgOn').show();"; 
+  webPage += "    } else {"; 
+  webPage += "$('#buttonOn').show(); ";
+  webPage += "$('#imgOff').show();";
   webPage += "$('#buttonOff').hide(); ";
-  webPage += "$('#imgOn').hide();";
+  webPage += "$('#imgOn').hide();";   
+  webPage += "        }";  
   webPage += "  $('.button').click(function() {";
   webPage += "  var mode=$('#toggle').prop('checked');";
   webPage += "  $('#toggle').prop('checked', ! mode);";
@@ -117,7 +134,6 @@ void setup(void){
   webPage += switchOn;
   webPage += "</div>";
   webPage += "<form id=\"myForm\" name=\"myForm\" action=\"switch\" method=\"post\">";
-  webPage += "<input type=\"checkbox\" name=\"toggle\" id=\"toggle\" data-toggle=\"toggle\" data-off=\"Off\" data-on=\"On\" checked style=\"display:none\">";
   webPage += "<div id=\"buttonOn\"><a href=\"#\" class=\"button\" id=\"buttonOn\"/>";
   webPage += "<span>Turn On</span>";
   webPage += "</a></div>";
@@ -125,7 +141,7 @@ void setup(void){
   webPage += "<span>Turn Off</span>";
   webPage += "</a></div></div>";
   webPage += "<div id=\"corner\" class=\"corner\"><a href=\"/\">Reset</a></div></form>";
-
+  webPage += "<input type=\"checkbox\" name=\"toggle\" id=\"toggle\" data-toggle=\"toggle\" data-off=\"Off\" data-on=\"On\" checked >";
   webPage += "</body></html>";
   
   jsonSuccess += "{ \"success\": true }";
@@ -142,7 +158,7 @@ void setup(void){
   
   delay(1000);
   Serial.begin(115200);
-  WiFi.begin(ssid, pass);
+  WiFi.begin(ssid, password);
   Serial.println("");
 
   // Wait for connection
@@ -163,7 +179,8 @@ void setup(void){
 
     
   server.on("/", [](){
-      server.send(200, "text/html", webPage);
+    
+    server.send(200, "text/html", webPage);
   });
 
   
@@ -171,11 +188,8 @@ void setup(void){
     
     server.sendHeader("Access-Control-Allow-Origin", "*");
 
-    // toggle state
-    state = 1 - state;
-    
     // if (server.arg("mode") == "true" ){
-    if (state == 1 ){
+    if (state == false ){
       Serial.println("Request to toggle on");
       digitalWrite(gpio0_pin, HIGH);
       delay(300);
@@ -189,6 +203,9 @@ void setup(void){
       digitalWrite(gpio2_pin, LOW);
       server.send(200, "application/json", jsonOff);
     }
+    // toggle state
+    state = !state;
+    
   });
 
   
@@ -197,7 +214,7 @@ void setup(void){
     digitalWrite(gpio0_pin, HIGH);
     delay(1100);
     digitalWrite(gpio2_pin, HIGH);
-    state = 1 ;
+    state = true ;
     server.send(200, "application/json", jsonOn);
   });
 
@@ -207,7 +224,7 @@ void setup(void){
     digitalWrite(gpio0_pin, LOW);
     delay(1100);
     digitalWrite(gpio2_pin, LOW);
-    state = 0 ;
+    state = false ;
     server.send(200, "application/json", jsonOff);
   });
 
@@ -233,6 +250,18 @@ void setup(void){
     Serial.println("Request to turn p2 on");
     digitalWrite(gpio2_pin, HIGH);
     server.send(200, "text/plain", "HW/pin2 on\n");
+  });
+
+  server.on("/state", [](){
+    String bobster = "";
+    Serial.print("Request for state: ");
+    Serial.println(state);
+    if ( state == true ) {
+        bobster = "on\n";
+    } else {
+      bobster = "off\n";
+    }
+    server.send(200, "text/plain", bobster);
   });
   
   server.begin();
