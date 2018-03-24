@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <style media=screen type=text/css>
+  #header { text-align: center;  background:#162; color:#FFF; font-family: arial; font-weight: bold;  }
+  #main { width:100%; background:#FFF; color:#000; font-family: arial; padding: 40px; } body { text-align: center; }
+  #corner { text-align: right; bottom:0;right:0; background:#FFF; font-family: arial; font-size: 8px; } 
+  .button {display: inline-block; margin: 10px; -webkit-border-radius: 8px; -moz-border-radius: 8px; border-radius: 8px; 
+  -webkit-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35); -moz-box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35);
+   box-shadow: 0 8px 0 #c5376d, 0 15px 20px rgba(0, 0, 0, .35); -webkit-transition: -webkit-box-shadow .1s ease-in-out;
+   -moz-transition: -moz-box-shadow .1s ease-in-out; -o-transition: -o-box-shadow .1s ease-in-out; transition: box-shadow .1s ease-in-out;
+  font-size: 50px; color: #fff; }
+  .button span { display: inline-block; padding: 20px 30px; background-color: #ec528d; 
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(hsla(338, 90%, 80%, .8)), to(hsla(338, 90%, 70%, .2)));
+  background-image: -webkit-linear-gradient(hsla(338, 90%, 80%, .8), hsla(338, 90%, 70%, .2));
+  background-image: -moz-linear-gradient(hsla(338, 90%, 80%, .8), hsla(338, 90%, 70%, .2));
+  background-image: -o-linear-gradient(hsla(338, 90%, 80%, .8), hsla(338, 90%, 70%, .2));
+   -webkit-border-radius: 8px; -moz-border-radius: 8px; border-radius: 8px;-webkit-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
+   -moz-box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15); box-shadow: inset 0 -1px 1px rgba(255, 255, 255, .15);
+   font-family: Arial, sans-serif; line-height: 1; text-shadow: 0 -1px 1px rgba(175, 49, 95, .7);
+   -webkit-transition: background-color .2s ease-in-out, -webkit-transform .1s ease-in-out;
+   -moz-transition: background-color .2s ease-in-out, -moz-transform .1s ease-in-out;
+   -o-transition: background-color .2s ease-in-out, -o-transform .1s ease-in-out;
+   transition: background-color .2s ease-in-out, transform .1s ease-in-out; }
+  .button:hover span { background-color: #ec6a9c;text-shadow: 0 -1px 1px rgba(175, 49, 95, .9), 0 0 5px rgba(255, 255, 255, .8);}
+  .button:active, .button:focus { -webkit-box-shadow:    0 8px 0 #c5376d, 0 12px 10px rgba(0, 0, 0, .3);
+      -moz-box-shadow: 0 8px 0 #c5376d, 0 12px 10px rgba(0, 0, 0, .3); box-shadow:    0 8px 0 #c5376d, 0 12px 10px rgba(0, 0, 0, .3); }
+  .button:active span { -webkit-transform: translate(0, 4px); -moz-transform: translate(0, 4px); -o-transform: translate(0, 4px); transform: translate(0, 4px);}</style><body>
+
+  <script>
+  $(document).ready(function(){
+  $.ajax({
+          type:'GET',
+          dataType:'TEXT',
+          url:'state.php',
+          success:function(response)
+          {
+      console.log(response);
+  //          var response=eval(response);
+      if (response == "on") {
+        $('#toggle').prop('checked') = false ; 
+        $('#buttonOn').hide(); 
+        $('#buttonOff').show(); 
+        $('#imgOn').show();
+         $('#imgOff').hide();
+      } else {
+        $('#toggle').prop('checked') = true ; 
+        $('#buttonOn').show(); 
+        $('#buttonOff').hide(); 
+        $('#imgOn').hide();
+        $('#imgOff').show();
+          }
+          },
+         error: function(error) {
+                console.log(error);
+          }
+        });
+      if ($('#toggle').prop('checked') == "true") {
+  $('#buttonOn').hide(); 
+  $('#imgOff').hide();
+  $('#buttonOff').show(); 
+  $('#imgOn').show(); 
+      } else { 
+  $('#buttonOn').show(); 
+  $('#imgOff').show();
+  $('#buttonOff').hide(); 
+  $('#imgOn').hide();   
+          }  
+    $('.button').click(function() {
+    var mode=$('#toggle').prop('checked');
+    $('#toggle').prop('checked', ! mode);
+  $.ajax({
+          type:'POST',
+          dataType:'JSON',
+          url:'switch.php',
+          data:'mode='+mode,
+          success:function(response)
+          {
+      console.log(response);
+            var response=eval(response);
+            themode=response.mode;
+      if (themode == "true") {
+        $('#buttonOn').hide(); 
+        $('#buttonOff').show(); 
+        $('#imgOn').show();
+         $('#imgOff').hide();
+      } else {
+        $('#buttonOn').show(); 
+        $('#buttonOff').hide(); 
+        $('#imgOn').hide();
+        $('#imgOff').show();
+          }
+          },
+         error: function(error) {
+                console.log(error);
+          }
+        });
+    });
+  }); </script>
+  <div id="header"><H1>THE HEATING</H1></div>
+  <div id="imgOff">
+  <img src="switchOff.jpg"></img>
+  </div><div id="imgOn">
+  <img src="switchOn.jpg"></img>
+  </div>
+  <form id="myForm" name="myForm" action="switch" method="post">
+  <div id="buttonOn"><a href="#" class="button" id="buttonOn"/>
+  <span>Turn On</span>
+  </a></div>
+  <div id="buttonOff"><a href="#" class="button" id="buttonOff"/>
+  <span>Turn Off</span>
+  </a></div></div>
+  <div id="corner" class="corner"><a href="http://superstb/zone/switch_new.html">Reset</a></div></form>
+  <input type="checkbox" name="toggle" id="toggle" data-toggle="toggle" data-off="Off" data-on="On" checked >
+  </body></html>
+ 

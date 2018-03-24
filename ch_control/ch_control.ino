@@ -21,18 +21,22 @@
 MDNSResponder mdns;
 
 // Replace with your network credentials
-const char* ssid = "WIFI SSID";
-const char* password = "WIFI PASSWORD";
+const char* ssid = "BTHub3-G2J8";
+const char* password = "MyKeyIs13Long";
 
 ESP8266WebServer server(80);
 
 String webPage = "";
+String webPageF = "";
+
 String webPageOn = "";
 String webPageOff = "";
 String jsonSuccess = "";
 String jsonFail = "";
 String jsonOn = "";
 String jsonOff = "";
+String jsonStateOn = "";
+String jsonStateOff = "";
 String switchOff = "";
 String switchOn = "";
 
@@ -44,10 +48,8 @@ int gpio2_in = 0;
 int state0;
 int state2;
 int timemod = 0;
+int start = int(millis());
 int mills = 0;
-String flipmode = "";
-//const char* gpio0_in = "LOW";
-//const char* gpio2_in = "LOW";
 
 void setup(void){
 
@@ -84,7 +86,26 @@ void setup(void){
 
   webPage += "<script>";
   webPage += "$(document).ready(function(){";
-  webPage += "    if ($('#toggle').prop('checked') == \"true\") {";
+  /**
+  webPage += "$.ajax({";
+  webPage += "        type:'GET',";
+  webPage += "        dataType:'JSON',";
+  webPage += "        url:'state',";
+  webPage += "        success:function(response)";
+  webPage += "        {";
+  webPage += "    console.log(response);";
+  webPage += "          var response=eval(response);";
+  webPage += "          theres=response.state;";
+  webPage += "    if (theres == \"on\") {";
+  webPage += "      $('#toggle').prop('checked', false) ; ";
+  webPage += "    } else {";
+  webPage += "      $('#toggle').prop('checked', true) ; ";
+  webPage += "        }";
+  webPage += "        },";
+  webPage += "       error: function(error) { console.log(error); } } );";
+
+*/
+  webPage += "if ($('#toggle').prop('checked') == \"true\") {";
   webPage += "$('#buttonOn').hide(); ";
   webPage += "$('#imgOff').hide();";
   webPage += "$('#buttonOff').show(); ";
@@ -94,7 +115,7 @@ void setup(void){
   webPage += "$('#imgOff').show();";
   webPage += "$('#buttonOff').hide(); ";
   webPage += "$('#imgOn').hide();";   
-  webPage += "        }";  
+  webPage += "        }"; 
   webPage += "  $('.button').click(function() {";
   webPage += "  var mode=$('#toggle').prop('checked');";
   webPage += "  $('#toggle').prop('checked', ! mode);";
@@ -112,7 +133,7 @@ void setup(void){
   webPage += "      $('#buttonOn').hide(); ";
   webPage += "      $('#buttonOff').show(); ";
   webPage += "      $('#imgOn').show();";
- webPage += "       $('#imgOff').hide();";
+  webPage += "       $('#imgOff').hide();";
   webPage += "    } else {";
   webPage += "      $('#buttonOn').show(); ";
   webPage += "      $('#buttonOff').hide(); ";
@@ -124,7 +145,7 @@ void setup(void){
   webPage += "              console.log(error);";
   webPage += "        }";
   webPage += "      });";
-  webPage += "  });";
+  webPage += "      });";
   webPage += "}); </script>";
   
   webPage += "<div id=\"header\"><H1>THE HEATING</H1></div>";
@@ -143,12 +164,15 @@ void setup(void){
   webPage += "<div id=\"corner\" class=\"corner\"><a href=\"/\">Reset</a></div></form>";
   webPage += "<input type=\"checkbox\" name=\"toggle\" id=\"toggle\" data-toggle=\"toggle\" data-off=\"Off\" data-on=\"On\" checked >";
   webPage += "</body></html>";
+
+
   
   jsonSuccess += "{ \"success\": true }";
   jsonFail += "{ \"success\": false }";
   jsonOn += "{ \"success\": \"true\", \"mode\": \"true\" }";
   jsonOff += "{ \"success\": \"true\", \"mode\": \"false\" }";
-
+  jsonStateOn += "{ \"state\": \"on\" }";
+  jsonStateOff += "{ \"state\": \"off\" }";
   
   // preparing GPIOs
   pinMode(gpio0_pin, OUTPUT);
@@ -179,14 +203,13 @@ void setup(void){
 
     
   server.on("/", [](){
-    
     server.send(200, "text/html", webPage);
   });
 
   
   server.on("/switch", [](){
     
-    server.sendHeader("Access-Control-Allow-Origin", "*");
+    //server.sendHeader("Access-Control-Allow-Origin", "*");
 
     // if (server.arg("mode") == "true" ){
     if (state == false ){
@@ -257,13 +280,21 @@ void setup(void){
     Serial.print("Request for state: ");
     Serial.println(state);
     if ( state == true ) {
-        bobster = "on\n";
+        bobster = jsonStateOn;
     } else {
-      bobster = "off\n";
+      bobster = jsonStateOff;
     }
-    server.send(200, "text/plain", bobster);
+    server.send(200, "application/json", bobster);
   });
   
+  server.on("/Onfor", [](){
+    Serial.println("Request to turn on for an hour");
+    digitalWrite(gpio0_pin, HIGH);
+    delay(200);
+    digitalWrite(gpio2_pin, HIGH);
+    state = true ;
+    server.send(200, "application/json", jsonOn);
+  });  
   server.begin();
   Serial.println("Heating controller started");
   
@@ -272,13 +303,19 @@ void setup(void){
 void loop(void){
   server.handleClient();
   /**mills = int(millis());
-  timemod = mills % 5000 ;
-  if (timemod == 0 ) {
+  timemod = mills - start ;
+    Serial.print("start is: ");
+    Serial.print(start);
+    Serial.print(" : mills is: ");
+    Serial.print(mills);
+    Serial.print(" : timemod is: ");
+    Serial.println(timemod);
+  if (timemod > 5000) {
     Serial.println("5 secs passed");
     Serial.print("State is: ");
     Serial.println(state);
-  }
-  Serial.println(int(millis()));
-  */
+    start = mills ;
+  }*/
+  
 } 
 
